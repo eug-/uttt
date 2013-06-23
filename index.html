@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>UTTT</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+      body {
+        margin: 0;
+        overflow: hidden;
+      }
+      .grid {
+        width: 500px;
+        height: 500px;
+      }
+      .cell {
+        width: 33%;
+        height: 33%;
+        display: inline-block;
+        border: 1px solid #ccc;
+
+        -moz-box-sizing: border-box;
+        box-sizing: border-box;
+      }
+      .cell.selected {
+        background: #ddd;
+      }
+    </style>
+  </head>
+  <body>
+    <script src="lib/addeventlistener/addeventlistener.js"></script>
+    <script src="src/uttt.js"></script>
+    <script>
+      var game = new ut.Game();
+      document.body.appendChild(game.gridView.element);
+    </script>
+  </body>
+</html>
