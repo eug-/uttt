@@ -1,0 +1,3 @@
+[submodule "addeventlistener"]
+	path = lib/addeventlistener
+	url = git@github.com:eug-/addeventlistener.git
