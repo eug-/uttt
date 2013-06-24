@@ -30,8 +30,9 @@ ut.constants = {
 
 ut.events = {
   CELL_ACTIVATED: 'cellactivated',
-  CELL_CLICKED: 'cellclicked',
-  GRID_COMPLETE: 'gridcomplete'
+  CELL_SELECTED: 'cellclicked',
+  GRID_COMPLETE: 'gridcomplete',
+  GRID_LOCK_CHANGE: 'gridlockchange'
 };
 
 
@@ -60,13 +61,14 @@ ut.Game = function() {
   // Bind the incepted grids with Cell constructors.
   var innerGrid = ut.Grid.bind(undefined, ut.Cell);
   this.grid = new ut.Grid(innerGrid);
+  this.grid.unlock();
   this.grid.addEventListener(ut.events.GRID_COMPLETE,
       this.onGameComplete, this);
 
   this.gridView = new ut.GridView(this.grid);
   // TODO: Different event?
-  this.gridView.addEventListener(ut.events.CELL_ACTIVATED,
-      this.onCellActivated, this);
+  this.gridView.addEventListener(ut.events.CELL_SELECTED,
+      this.onCellSelected, this);
 };
 
 
@@ -80,8 +82,18 @@ ut.Game.prototype.onGameComplete = function(grid) {
 };
 
 
-ut.Game.prototype.onCellActivated = function(cell) {
+ut.Game.prototype.onCellSelected = function(cell, parentGrid) {
+  if (this.grid.isLocked() && parentGrid.isLocked()) {
+    // The selected cell is not in a valid grid.
+    return;
+  }
+
   cell.setMarker(this.env.activeMarker);
+
+  parentGrid.lock();
+  // Unlock the grid corresponding to the last selected cell.
+  var nextGrid = this.grid.cells[cell.row][cell.col];
+  this.grid.setLock(!nextGrid.unlock());
 };
 
 
@@ -103,64 +115,69 @@ ut.SelectableView = function(className) {
 ut.SelectableView.prototype = new EventDispatcher();
 
 
-ut.SelectableView.prototype.select = function() {
-  this.element.className += ' selected';
+ut.SelectableView.prototype.select = function(cell) {
+  this.element.className += ' selected ' + cell.getMarker().value;
   this.selected = true;
 };
 
 
-ut.CellView = function(cell) {
-  ut.SelectableView.call(this, 'cell');
-
+ut.CellView = function(cell, className) {
+  ut.SelectableView.call(this, className);
   this.cell = cell;
   this.element.addEventListener('click', this.onCellClicked.bind(this));
+  this.cell.addEventListener(ut.events.CELL_ACTIVATED, this.select, this);
 };
 ut.CellView.prototype = new ut.SelectableView();
 
 
 ut.CellView.prototype.onCellClicked = function(evt) {
   if (!this.selected) {
-    this.triggerEvent(ut.events.CELL_CLICKED, this);
+    this.triggerEvent(ut.events.CELL_SELECTED, this.cell);
   }
 };
 
 
 
-ut.GridView = function(grid, opt_className) {
-  ut.SelectableView.call(this, opt_className || 'grid');
-
+ut.GridView = function(grid, className) {
+  className = (className || '') + ' grid' + (grid.isLocked() ? '' : ' unlocked');
+  ut.SelectableView.call(this, className);
   this.grid = grid;
-  grid.forEachCell(grid.hasGridCells() ?
-      this.createGridView.bind(this) :
-      this.createCellView.bind(this));
+  this.grid.addEventListener(ut.events.CELL_ACTIVATED, this.select, this);
+  this.grid.addEventListener(ut.events.GRID_LOCK_CHANGE, this.setLock, this);
+  var viewCtor = grid.hasGridCells() ? ut.GridView : ut.CellView;
+  grid.forEachCell(this.createChildView.bind(this, viewCtor));
 };
 ut.GridView.prototype = new ut.SelectableView();
 
 
-ut.GridView.prototype.createGridView = function(grid) {
-  var gridView = new ut.GridView(grid, 'grid cell');
-  gridView.addEventListener(ut.events.CELL_CLICKED, this.reportCellSelected, this);
-  this.element.appendChild(gridView.element);
+ut.GridView.prototype.setLock = function(locked) {
+  if (locked) {
+    this.element.classList.remove('unlocked');
+  } else {
+    this.element.classList.add('unlocked');
+  }
 };
 
 
-ut.GridView.prototype.createCellView = function(cell) {
-  var cellView = new ut.CellView(cell);
-  cellView.addEventListener(ut.events.CELL_CLICKED, this.onCellSelected, this);
-  this.element.appendChild(cellView.element);
+ut.GridView.prototype.createChildView = function(viewCtor, cell) {
+  // Both grid and cell views get the 'cell' CSS class since both
+  // have parent views.
+  var view = new viewCtor(cell, 'cell');
+  view.addEventListener(ut.events.CELL_SELECTED, this.onCellSelected, this);
+  this.element.appendChild(view.element);
 };
 
 
-ut.GridView.prototype.reportCellSelected = function(cellView) {
-  var cell = cellView.cell;
-  cellView.select();
-  this.triggerEvent(ut.events.CELL_ACTIVATED, cell);
-};
-
-
-ut.GridView.prototype.onCellSelected = function(cellView) {
-  // TODO: Only if the grid is active.
-  this.triggerEvent(ut.events.CELL_CLICKED, cellView);
+/**
+ * Bubbles up selected cell events.
+ */
+ut.GridView.prototype.onCellSelected = function(cell, opt_parent) {
+  // Only non-filled grids should respond to events.
+  if (this.grid.isEmpty()) {
+    // Pass the grid that originated the selected cell.
+    opt_parent = opt_parent || this.grid;
+    this.triggerEvent(ut.events.CELL_SELECTED, cell, opt_parent);
+  }
 };
 
 
@@ -177,6 +194,8 @@ ut.Cell = function() {
   EventDispatcher.call(this);
 
   this.marker = null;
+  this.row = 0;
+  this.col = 0;
 };
 ut.Cell.prototype = new EventDispatcher();
 
@@ -188,6 +207,17 @@ ut.Cell.prototype = new EventDispatcher();
 ut.Cell.prototype.setMarker = function(marker) {
   this.marker = marker;
   this.triggerEvent(ut.events.CELL_ACTIVATED, this);
+};
+
+
+ut.Cell.prototype.setPosition = function(row, col) {
+  this.row = row;
+  this.col = col;
+};
+
+
+ut.Cell.prototype.getPosition = function() {
+  return this.row + '_' + this.col;
 };
 
 
@@ -222,6 +252,12 @@ ut.Grid = function(cellCtor) {
    */
   this.cellCtor = cellCtor;
 
+  /**
+   * Whether manipulation of the grid is allowed.
+   * @type {Boolean}
+   */
+  this.locked = true;
+
   this.initialize();
 };
 ut.Grid.prototype = new ut.Cell();
@@ -235,6 +271,31 @@ ut.Grid.prototype.hasGridCells = function() {
 };
 
 
+ut.Grid.prototype.isLocked = function() {
+  return this.locked;
+};
+
+
+ut.Grid.prototype.lock = function() {
+  return this.setLock(true);
+};
+
+
+ut.Grid.prototype.unlock = function() {
+  return this.setLock(false);
+};
+
+
+ut.Grid.prototype.setLock = function(lock) {
+  // Only unlock a grid if moves exist.
+  if (this.locked != lock && (lock || this.isEmpty()) ) {
+    this.locked = lock;
+    this.triggerEvent(ut.events.GRID_LOCK_CHANGE, lock);
+  }
+  return this.isLocked();
+};
+
+
 /**
  * Resets the grid to a clean state.
  */
@@ -244,6 +305,7 @@ ut.Grid.prototype.initialize = function() {
     this.cells[i] = [];
     for (var j = 0; j < ut.constants.BOARD_SIZE; j++) {
       var cell = new this.cellCtor();
+      cell.setPosition(i, j);
       this.cells[i][j] = cell;
       cell.addEventListener(ut.events.CELL_ACTIVATED, this.checkStatus, this);
     }
