@@ -88,12 +88,14 @@ ut.Game.prototype.onCellSelected = function(cell, parentGrid) {
     return;
   }
 
-  cell.setMarker(this.env.activeMarker);
+  cell.setMarker(this.env.getActiveMarker());
 
   parentGrid.lock();
   // Unlock the grid corresponding to the last selected cell.
   var nextGrid = this.grid.cells[cell.row][cell.col];
   this.grid.setLock(!nextGrid.unlock());
+
+  this.env.updateForNextTurn();
 };
 
 
@@ -101,7 +103,21 @@ ut.Game.prototype.onCellSelected = function(cell, parentGrid) {
 ut.Environment = function() {
   this.stageWidth = 500;
   this.stageHeight = 500;
-  this.activeMarker = new ut.Marker('player1');
+  this.markers = [
+    new ut.Marker('Ex'),
+    new ut.Marker('Oh')
+  ];
+  this.activeMarker = 0;
+};
+
+
+ut.Environment.prototype.getActiveMarker = function() {
+  return this.markers[this.activeMarker];
+};
+
+
+ut.Environment.prototype.updateForNextTurn = function() {
+  this.activeMarker = (this.activeMarker + 1) % this.markers.length;
 };
 
 
@@ -116,7 +132,8 @@ ut.SelectableView.prototype = new EventDispatcher();
 
 
 ut.SelectableView.prototype.select = function(cell) {
-  this.element.className += ' selected ' + cell.getMarker().value;
+  var val = cell.getMarker().value.toLowerCase();
+  this.element.className += ' selected ' + val;
   this.selected = true;
 };
 
