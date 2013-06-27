@@ -21,14 +21,30 @@
         -moz-box-sizing: border-box;
         box-sizing: border-box;
       }
-      .cell.selected {
+      .cell.grid {
+        background: #eee;
+      }
+      .unlocked .cell.grid,
+      .grid.unlocked {
+        background: #fff;
+      }
+      .unlocked .cell.selected {
         background: #ddd;
       }
-      .cell.selected.oh {
+      .unlocked .cell.selected.o {
+        background: #148;
+      }
+      .unlocked .cell.selected.x {
+        background: #dda;
+      }
+      .cell.selected {
+        background: #ccc;
+      }
+      .cell.selected.o {
         background: #036;
       }
-      .cell.selected.ex {
-        background: #dda;
+      .cell.selected.x {
+        background: #cc9;
       }
     </style>
   </head>
@@ -37,7 +53,7 @@
     <script src="src/uttt.js"></script>
     <script>
       var game = new ut.Game();
-      document.body.appendChild(game.gridView.element);
+      document.body.appendChild(game.gameView.element);
     </script>
   </body>
 </html>

@@ -69,6 +69,9 @@ ut.Game = function() {
   // TODO: Different event?
   this.gridView.addEventListener(ut.events.CELL_SELECTED,
       this.onCellSelected, this);
+
+  this.gameView = new ut.GameView();
+  this.gameView.add(this.gridView);
 };
 
 
@@ -77,7 +80,7 @@ ut.Game.prototype.onGameComplete = function(grid) {
   if (winner == ut.Marker.STALEMATE) {
     alert('Stalemate!');
   } else {
-    alert(winner.value);
+    alert(winner.name + ' wins');
   }
 };
 
@@ -104,8 +107,8 @@ ut.Environment = function() {
   this.stageWidth = 500;
   this.stageHeight = 500;
   this.markers = [
-    new ut.Marker('Ex'),
-    new ut.Marker('Oh')
+    new ut.Marker('x', 'Player One'),
+    new ut.Marker('o', 'Player Two')
   ];
   this.activeMarker = 0;
 };
@@ -118,6 +121,21 @@ ut.Environment.prototype.getActiveMarker = function() {
 
 ut.Environment.prototype.updateForNextTurn = function() {
   this.activeMarker = (this.activeMarker + 1) % this.markers.length;
+};
+
+
+
+ut.GameView = function() {
+  this.element = document.createElement('div');
+  this.element.className = 'uttt';
+};
+
+
+ut.GameView.prototype.add = function(arg_views) {
+  var views = Array.prototype.slice.call(arguments);
+  views.forEach(function(view) {
+    this.element.appendChild(view.element);
+  }, this);
 };
 
 
@@ -136,6 +154,7 @@ ut.SelectableView.prototype.select = function(cell) {
   this.element.className += ' selected ' + val;
   this.selected = true;
 };
+
 
 
 ut.CellView = function(cell, className) {
@@ -199,11 +218,12 @@ ut.GridView.prototype.onCellSelected = function(cell, opt_parent) {
 
 
 
-ut.Marker = function(value) {
+ut.Marker = function(value, name) {
   this.value = value;
+  this.name = name;
 };
 
-ut.Marker.STALEMATE = new ut.Marker('__stalemate');
+ut.Marker.STALEMATE = new ut.Marker('__stalemate', 'No one');
 
 
 
