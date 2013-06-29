@@ -55,8 +55,8 @@ ut.states = [
 /**
  * Game controller.
  */
-ut.Game = function() {
-  this.env = new ut.Environment();
+ut.Game = function(assets) {
+  this.env = new ut.Environment(assets);
 
   // Bind the incepted grids with Cell constructors.
   var innerGrid = ut.Grid.bind(undefined, ut.Cell);
@@ -103,12 +103,12 @@ ut.Game.prototype.onCellSelected = function(cell, parentGrid) {
 
 
 
-ut.Environment = function() {
+ut.Environment = function(assets) {
   this.stageWidth = 500;
   this.stageHeight = 500;
   this.markers = [
-    new ut.Marker('x', 'Player One'),
-    new ut.Marker('o', 'Player Two')
+    new ut.Marker('x', 'Player One', assets.x),
+    new ut.Marker('o', 'Player Two', assets.o)
   ];
   this.activeMarker = 0;
 };
@@ -145,16 +145,37 @@ ut.SelectableView = function(className) {
 
   this.element = document.createElement('div');
   this.element.className = className;
+  this.marker = null;
 };
 ut.SelectableView.prototype = new EventDispatcher();
 
 
 ut.SelectableView.prototype.select = function(cell) {
-  var val = cell.getMarker().value.toLowerCase();
-  this.element.className += ' selected ' + val;
+  var marker = cell.getMarker();
+  var className = marker.value.toLowerCase();
+  this.element.className += ' selected ' + className;
+  if (marker.asset) {
+    this.setMarker(marker.asset.cloneNode(true));
+  }
   this.selected = true;
 };
 
+
+ut.SelectableView.prototype.setMarker = function(marker) {
+  this.removeMarker();
+  this.marker = marker;
+  this.element.appendChild(marker);
+};
+
+
+ut.SelectableView.prototype.removeMarker = function() {
+  if (!this.marker) {
+    return;
+  }
+  var parent = this.marker.parentNode;
+  parent.removeChild(this.marker);
+  this.marker = null;
+};
 
 
 ut.CellView = function(cell, className) {
@@ -218,9 +239,10 @@ ut.GridView.prototype.onCellSelected = function(cell, opt_parent) {
 
 
 
-ut.Marker = function(value, name) {
+ut.Marker = function(value, name, asset) {
   this.value = value;
   this.name = name;
+  this.asset = asset;
 };
 
 ut.Marker.STALEMATE = new ut.Marker('__stalemate', 'No one');
