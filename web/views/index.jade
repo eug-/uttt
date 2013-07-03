@@ -1,0 +1,16 @@
+!!! html
+html
+  head
+    title Socket Test
+    script(src='/socket.io/socket.io.js')
+    script(src='http://code.jquery.com/jquery-latest.js')
+  body
+
+    script
+      var socket = io.connect();
+      socket.emit('move', { move: '1,1' });
+      socket.on('move', function (data) {
+        console.log(data);
+      });
+
+
