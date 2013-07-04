@@ -1,0 +1,11 @@
+{
+    "name": "uttt",
+    "version": "0.0.0",
+    "description": "ultimate tic tac toe",
+    "dependencies": {
+        "socket.io": "latest",
+        "express": "latest",
+        "jade": "latest"
+    },
+    "author": "developer"
+}
