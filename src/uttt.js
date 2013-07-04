@@ -31,6 +31,7 @@ ut.constants = {
 ut.events = {
   CELL_ACTIVATED: 'cellactivated',
   CELL_SELECTED: 'cellclicked',
+  GAME_MOVE: 'gamemove',
   GRID_COMPLETE: 'gridcomplete',
   GRID_LOCK_CHANGE: 'gridlockchange'
 };
@@ -55,8 +56,10 @@ ut.states = [
 /**
  * Game controller.
  */
-ut.Game = function(assets) {
-  this.env = new ut.Environment(assets);
+ut.Game = function(opts) {
+  EventDispatcher.call(this);
+
+  this.env = new ut.Environment(opts);
 
   // Bind the incepted grids with Cell constructors.
   var innerGrid = ut.Grid.bind(undefined, ut.Cell);
@@ -70,9 +73,14 @@ ut.Game = function(assets) {
   this.gridView.addEventListener(ut.events.CELL_SELECTED,
       this.onCellSelected, this);
 
+  if (!this.env.online) {
+    this.addEventListener(ut.events.GAME_MOVE, this.onGameMove, this);
+  }
+
   this.gameView = new ut.GameView();
   this.gameView.add(this.gridView);
 };
+ut.Game.prototype = new EventDispatcher();
 
 
 ut.Game.prototype.onGameComplete = function(grid) {
@@ -90,37 +98,47 @@ ut.Game.prototype.onCellSelected = function(cell, parentGrid) {
     // The selected cell is not in a valid grid.
     return;
   }
+  this.triggerEvent(ut.events.GAME_MOVE, {
+    player: this.env.activeMarker,
+    position: [parentGrid.row, parentGrid.col, cell.row, cell.col]
+  });
+};
 
-  cell.setMarker(this.env.getActiveMarker());
 
+ut.Game.prototype.onGameMove = function(move) {
+  var parentGrid = this.grid.cells[move.position[0]][move.position[1]];
+  var cell = parentGrid.cells[move.position[2]][move.position[3]];
+
+  cell.setMarker(this.env.getMarker(move.player));
   parentGrid.lock();
   // Unlock the grid corresponding to the last selected cell.
   var nextGrid = this.grid.cells[cell.row][cell.col];
   this.grid.setLock(!nextGrid.unlock());
 
-  this.env.updateForNextTurn();
+  this.env.updateForNextTurn(move.player);
 };
 
 
 
-ut.Environment = function(assets) {
+ut.Environment = function(opts) {
   this.stageWidth = 500;
   this.stageHeight = 500;
+  this.online = !!opts.online;
   this.markers = [
-    new ut.Marker('x', 'Player One', assets.x),
-    new ut.Marker('o', 'Player Two', assets.o)
+    new ut.Marker('x', 'Player One', opts.assets.x),
+    new ut.Marker('o', 'Player Two', opts.assets.o)
   ];
   this.activeMarker = 0;
 };
 
 
-ut.Environment.prototype.getActiveMarker = function() {
-  return this.markers[this.activeMarker];
+ut.Environment.prototype.getMarker = function(opt_markerIndex) {
+  return this.markers[opt_markerIndex || this.activeMarker];
 };
 
 
-ut.Environment.prototype.updateForNextTurn = function() {
-  this.activeMarker = (this.activeMarker + 1) % this.markers.length;
+ut.Environment.prototype.updateForNextTurn = function(markerIndex) {
+  this.activeMarker = (markerIndex + 1) % this.markers.length;
 };
 
 

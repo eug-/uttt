@@ -35,23 +35,23 @@
       .cell + .cell + .cell + .cell,
       .cell + .cell + .cell + .cell + .cell + .cell + .cell {
         border: none;
-        border-bottom: 1px solid #ddd;
-        border-right: 1px solid #ddd;
+        border-bottom: 2px solid #ddd;
+        border-right: 2px solid #ddd;
       }
 
       .cell + .cell,
       .cell + .cell + .cell + .cell + .cell,
       .cell + .cell + .cell + .cell + .cell + .cell + .cell + .cell {
         border: none;
-        border-bottom: 1px solid #ddd;
+        border-bottom: 2px solid #ddd;
       }
 
       .cell + .cell + .cell,
       .cell + .cell + .cell + .cell + .cell + .cell,
       .cell + .cell + .cell + .cell + .cell + .cell + .cell + .cell + .cell {
         border: none;
-        border-bottom: 1px solid #ddd;
-        border-left: 1px solid #ddd;
+        border-bottom: 2px solid #ddd;
+        border-left: 2px solid #ddd;
       }
 
       .cell + .cell + .cell + .cell + .cell + .cell + .cell,
@@ -113,11 +113,25 @@
     <script src="lib/addeventlistener/addeventlistener.js"></script>
     <script src="src/uttt.js"></script>
     <script>
-      var assets = {
-        x: document.getElementById('x-svg'),
-        o: document.getElementById('o-svg')
+      // TODO: add socket.io connection.
+      var socket;
+      // socket = io.connect('http://localhost');
+      var opts = {
+        online: socket,
+        assets: {
+          x: document.getElementById('x-svg'),
+          o: document.getElementById('o-svg')
+        }
       };
-      var game = new ut.Game(assets);
+      var game = new ut.Game(opts);
+      /*
+      game.addEventListener(ut.events.GAME_MOVE, function(data) {
+        socket.emit('move', data);
+      });
+      socket.on('move', function (data) {
+        game.onGameMove(data);
+      });
+      */
       document.body.appendChild(game.gameView.element);
     </script>
   </body>
