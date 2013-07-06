@@ -106,6 +106,7 @@ ut.Game.prototype.onCellSelected = function(cell, parentGrid) {
 
 
 ut.Game.prototype.onGameMove = function(move) {
+  
   var parentGrid = this.grid.cells[move.position[0]][move.position[1]];
   var cell = parentGrid.cells[move.position[2]][move.position[3]];
 
