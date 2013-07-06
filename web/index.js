@@ -20,15 +20,82 @@ app.get('/', function (req, res) {
 */
 
 server.listen(port);
+var game;
 
 io.sockets.on('connection', function (socket) {
-  console.log('CONNECTION MADE');
-  socket.on('move', function (data) {
-    console.log(data);
-    io.sockets.emit('move',  data );
-  });
+  if (!game) {
+    game = new Game();
+  }
+  game.addClient(socket);
 });
 
 
 
+var Game = function () {
+  this.id = '';
+  this.clients = {};
+  this.moves = [];
+  this.connectedClients = 0;
+};
 
+
+Game.MAX_CONNECTIONS = 2;
+
+
+Game.prototype.addClient = function (socket) {
+  if (this.clients.length >= Game.MAX_CONNECTIONS) {
+    //socket.disconect();
+    return;
+  }
+
+  var client = {
+    player: this.connectedClients
+  };
+
+  this.connectedClients++;
+  this.clients[socket.id] = client;
+  this.addSocketListeners(socket);
+
+  socket.emit('init', {
+    player: client.player,
+    moves: this.moves
+  });
+};
+
+
+Game.prototype.verifyMove = function (client, move) {
+  if (move.player != client.player) {
+    // Player sending the request did not match the client.
+    return false;
+  }
+  if (this.moves.length &&
+      this.moves[this.moves.length - 1].player == move.player) {
+    // Player attempting to make a second move in a row.
+    // TODO: Create an 'activePlayer' property and verify against
+    // that instead.
+    return false;
+  }
+  return true;
+};
+
+
+Game.prototype.addSocketListeners = function (socket) {
+  socket.on('move', (function (data) {
+    if (this.verifyMove(this.clients[socket.id], data)) {
+      this.moves.push(data);
+      io.sockets.emit('move',  data);
+    }
+  }).bind(this));
+
+  socket.on('disconnect', (function () {
+    if (this.clients[socket.id]) {
+      delete this.clients[socket.id];
+      this.connectedClients--;
+
+      // Delete game if no player is connected.
+      if (this.connectedClients <= 0) {
+        game = null;
+      }
+    }
+  }).bind(this));
+};

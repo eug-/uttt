@@ -1,0 +1,149 @@
+body {
+  margin: 0;
+  background: #000;
+  font-family: helvetica, arial, sanf-serif;
+}
+
+#assets {
+  display: none;
+}
+
+.uttt {
+  width: 600px;
+  height: 600px;
+  margin: 10px auto 50px;
+}
+
+.hud {
+  position: relative;
+  height: 50px;
+  width: 100%;
+  line-height: 50px;
+  font-size: 20px;
+}
+
+.hud * {
+  vertical-align: middle;
+}
+
+.hud svg {
+  display: inline-block;
+  fill: #666;
+  width: 30px;
+  height: 30px;
+  margin: 0 10px;
+}
+
+.hud span {
+  position: relative;
+}
+
+.hud .local-indicator {
+  position: absolute;
+  left: 1px;
+  bottom: -6px;
+  font-size: 10px;
+  line-height: 1;
+}
+
+.player {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  color: #666;
+}
+
+.player + .player {
+  text-align: right;
+}
+
+.player.active {
+  color: #eee;
+}
+
+.player.active svg {
+  fill: #eee;
+}
+
+.grid {
+  width: 100%;
+  height: 100%;
+}
+
+.cell {
+  position: relative;
+  width: 33.33%;
+  height: 33.33%;
+  display: inline-block;
+  line-height: 0;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+  transition: opacity .75s ease-out;
+}
+
+.cell,
+.cell + .cell + .cell + .cell,
+.cell + .cell + .cell + .cell + .cell + .cell + .cell {
+  border: none;
+  border-bottom: 2px solid #ddd;
+  border-right: 2px solid #ddd;
+}
+
+.cell + .cell,
+.cell + .cell + .cell + .cell + .cell,
+.cell + .cell + .cell + .cell + .cell + .cell + .cell + .cell {
+  border: none;
+  border-bottom: 2px solid #ddd;
+}
+
+.cell + .cell + .cell,
+.cell + .cell + .cell + .cell + .cell + .cell,
+.cell + .cell + .cell + .cell + .cell + .cell + .cell + .cell + .cell {
+  border: none;
+  border-bottom: 2px solid #ddd;
+  border-left: 2px solid #ddd;
+}
+
+.cell + .cell + .cell + .cell + .cell + .cell + .cell,
+.cell + .cell + .cell + .cell + .cell + .cell + .cell + .cell,
+.cell + .cell + .cell + .cell + .cell + .cell + .cell + .cell + .cell {
+  border-bottom: none;
+}
+
+.cell svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.cell.grid {
+  padding: 4%;
+  background: #222;
+  border-width: 5px !important;
+}
+
+.unlocked .cell.grid,
+.grid.unlocked {
+  background: #444;
+}
+
+.unlocked .cell.grid.selected {
+  background: #222;
+}
+
+.unlocked.cell.selected .icon {
+  fill: #ddd
+}
+
+.cell.selected .icon {
+  -webkit-filter: drop-shadow(1px 1px 2px rgba(128, 128, 128, 0.2));
+  filter: drop-shadow(1px 1px 2px rgba(128, 128, 128, 0.2));
+  fill: #fff;
+}
+
+.cell.selected .cell {
+  opacity: 0;
+}

@@ -3,96 +3,7 @@
   <head>
     <title>UTTT</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <style>
-      body {
-        margin: 0;
-        background: #000;
-      }
-      #assets {
-        display: none;
-      }
-      .uttt {
-        width: 600px;
-        height: 600px;
-        margin: 50px auto;
-      }
-      .grid {
-        width: 100%;
-        height: 100%;
-      }
-      .cell {
-        position: relative;
-        width: 33.33%;
-        height: 33.33%;
-        display: inline-block;
-        line-height: 0;
-        -moz-box-sizing: border-box;
-        box-sizing: border-box;
-        transition: opacity .75s ease-out;
-      }
-
-      .cell,
-      .cell + .cell + .cell + .cell,
-      .cell + .cell + .cell + .cell + .cell + .cell + .cell {
-        border: none;
-        border-bottom: 2px solid #ddd;
-        border-right: 2px solid #ddd;
-      }
-
-      .cell + .cell,
-      .cell + .cell + .cell + .cell + .cell,
-      .cell + .cell + .cell + .cell + .cell + .cell + .cell + .cell {
-        border: none;
-        border-bottom: 2px solid #ddd;
-      }
-
-      .cell + .cell + .cell,
-      .cell + .cell + .cell + .cell + .cell + .cell,
-      .cell + .cell + .cell + .cell + .cell + .cell + .cell + .cell + .cell {
-        border: none;
-        border-bottom: 2px solid #ddd;
-        border-left: 2px solid #ddd;
-      }
-
-      .cell + .cell + .cell + .cell + .cell + .cell + .cell,
-      .cell + .cell + .cell + .cell + .cell + .cell + .cell + .cell,
-      .cell + .cell + .cell + .cell + .cell + .cell + .cell + .cell + .cell {
-        border-bottom: none;
-      }
-      
-      .cell svg {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-      }
-      .cell.grid {
-        padding: 4%;
-        background: #222;
-        border-width: 5px !important;
-      }
-      .unlocked .cell.grid,
-      .grid.unlocked {
-        background: #444;
-      }
-
-      .unlocked .cell.grid.selected {
-        background: #222;
-      }
-
-      .unlocked.cell.selected .icon {
-        fill: #ddd
-      }
-      .cell.selected .icon {
-        -webkit-filter: drop-shadow(1px 1px 2px rgba(128, 128, 128, 0.2));
-        filter: drop-shadow(1px 1px 2px rgba(128, 128, 128, 0.2));
-        fill: #fff;
-      }
-      .cell.selected .cell {
-        opacity: 0;
-      }
-    </style>
+    <link rel="stylesheet" href="uttt.css">
   </head>
   <body>
 
@@ -114,9 +25,9 @@
     <script src="lib/socket.io.js"></script>
     <script src="src/uttt.js"></script>
     <script>
-      // TODO: add socket.io connection.
-      var socket;
-      socket = io.connect('http://50.57.125.28:3700');
+      var local = false;
+      // local = true;
+      var socket = io.connect((local ? 'http://localhost' : 'http://50.57.125.28') + ':3700');
       var opts = {
         online: socket,
         assets: {
@@ -129,7 +40,16 @@
       game.addEventListener(ut.events.GAME_MOVE, function(data) {
         socket.emit('move', data);
       });
-      socket.on('move', function (data) {
+
+      socket.on('init', function(data) {
+        console.log('Connected: ', data);
+        var moves = data.moves;
+        game.setPlayer(data.player);
+        moves.forEach(function(move) {
+          game.onGameMove(move);
+        });
+      });
+      socket.on('move', function(data) {
         game.onGameMove(data);
       });
 

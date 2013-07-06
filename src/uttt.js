@@ -69,16 +69,17 @@ ut.Game = function(opts) {
       this.onGameComplete, this);
 
   this.gridView = new ut.GridView(this.grid);
-  // TODO: Different event?
   this.gridView.addEventListener(ut.events.CELL_SELECTED,
       this.onCellSelected, this);
+
+  this.hudView = new ut.HudView(this.env);
 
   if (!this.env.online) {
     this.addEventListener(ut.events.GAME_MOVE, this.onGameMove, this);
   }
 
   this.gameView = new ut.GameView();
-  this.gameView.add(this.gridView);
+  this.gameView.add(this.hudView, this.gridView);
 };
 ut.Game.prototype = new EventDispatcher();
 
@@ -98,8 +99,9 @@ ut.Game.prototype.onCellSelected = function(cell, parentGrid) {
     // The selected cell is not in a valid grid.
     return;
   }
+
   this.triggerEvent(ut.events.GAME_MOVE, {
-    player: this.env.activeMarker,
+    player: this.env.playerMarker,
     position: [parentGrid.row, parentGrid.col, cell.row, cell.col]
   });
 };
@@ -117,6 +119,15 @@ ut.Game.prototype.onGameMove = function(move) {
   this.grid.setLock(!nextGrid.unlock());
 
   this.env.updateForNextTurn(move.player);
+  this.hudView.update();
+};
+
+
+ut.Game.prototype.setPlayer = function(player) {
+  this.env.playerMarker = player;
+  if (this.env.online) {
+    this.hudView.players[player].addLocalPlayerLabel();
+  }
 };
 
 
@@ -130,16 +141,20 @@ ut.Environment = function(opts) {
     new ut.Marker('o', 'Player Two', opts.assets.o)
   ];
   this.activeMarker = 0;
+  this.playerMarker = opts.player;
 };
 
 
-ut.Environment.prototype.getMarker = function(opt_markerIndex) {
-  return this.markers[opt_markerIndex || this.activeMarker];
+ut.Environment.prototype.getMarker = function(markerIndex) {
+  return this.markers[markerIndex];
 };
 
 
 ut.Environment.prototype.updateForNextTurn = function(markerIndex) {
   this.activeMarker = (markerIndex + 1) % this.markers.length;
+  if (!this.online) {
+    this.playerMarker = this.activeMarker;
+  }
 };
 
 
@@ -155,6 +170,55 @@ ut.GameView.prototype.add = function(arg_views) {
   views.forEach(function(view) {
     this.element.appendChild(view.element);
   }, this);
+};
+
+
+
+ut.PlayerView = function(marker) {
+  this.element = document.createElement('div');
+  this.markerName = document.createElement('span');
+  this.markerName.innerHTML = marker.name;
+
+  this.element.appendChild(this.markerName);
+  this.element.appendChild(marker.asset.cloneNode(true));
+};
+
+
+ut.PlayerView.prototype.setActive = function(active) {
+  this.element.className = 'player' + (active ? ' active' : '');
+};
+
+
+ut.PlayerView.prototype.addLocalPlayerLabel = function() {
+  var localPlayer = document.createElement('span');
+  localPlayer.className = 'local-indicator';
+  localPlayer.innerHTML = 'you';
+  this.markerName.appendChild(localPlayer);
+};
+
+
+
+ut.HudView = function(env) {
+  this.element = document.createElement('div');
+  this.element.className = 'hud';
+  this.env = env;
+  this.players = [];
+
+  for (var i = 0; i < env.markers.length; i++) {
+    var marker = env.getMarker(i);
+    var player = new ut.PlayerView(marker);
+    this.players.push(player);
+    this.element.appendChild(player.element);
+  }
+
+  this.update();
+};
+
+
+ut.HudView.prototype.update = function() {
+  for (var i = this.players.length - 1; i >= 0; i--) {
+    this.players[i].setActive(i == this.env.activeMarker);
+  }
 };
 
 
