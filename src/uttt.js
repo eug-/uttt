@@ -125,7 +125,7 @@ ut.Game.prototype.onGameMove = function(move) {
 
 ut.Game.prototype.setPlayer = function(player) {
   this.env.playerMarker = player;
-  if (this.env.online) {
+  if (this.env.online && this.env.markers[player]) {
     this.hudView.players[player].addLocalPlayerLabel();
   }
 };

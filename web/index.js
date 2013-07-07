@@ -32,7 +32,8 @@ io.sockets.on('connection', function (socket) {
 
 
 var Game = function () {
-  this.id = '';
+  // TODO: Unique ids.
+  this.id = 'room';
   this.clients = {};
   this.moves = [];
   this.connectedClients = 0;
@@ -43,19 +44,18 @@ Game.MAX_CONNECTIONS = 2;
 
 
 Game.prototype.addClient = function (socket) {
-  if (this.clients.length >= Game.MAX_CONNECTIONS) {
-    //socket.disconect();
-    return;
-  }
-
   var client = {
     player: this.connectedClients
   };
 
-  this.connectedClients++;
-  this.clients[socket.id] = client;
-  this.addSocketListeners(socket);
+  // Add a participating player.
+  if (this.connectedClients < Game.MAX_CONNECTIONS) {
+    this.connectedClients++;
+    this.clients[socket.id] = client;
+    this.addSocketListeners(socket);
+  }
 
+  socket.join(this.id);
   socket.emit('init', {
     player: client.player,
     moves: this.moves
@@ -83,7 +83,7 @@ Game.prototype.addSocketListeners = function (socket) {
   socket.on('move', (function (data) {
     if (this.verifyMove(this.clients[socket.id], data)) {
       this.moves.push(data);
-      io.sockets.emit('move',  data);
+      io.sockets.in(this.id).emit('move',  data);
     }
   }).bind(this));
 
